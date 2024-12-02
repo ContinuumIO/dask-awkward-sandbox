@@ -24,6 +24,7 @@ from dask_awkward.lib.inspect import (
     report_necessary_columns,
     sample,
 )
+from dask_awkward.lib.mapfilter import mapfilter, prerun
 
 necessary_columns = report_necessary_columns  # Export for backwards compatibility.
 

@@ -32,6 +32,7 @@ Table of Contents
    how-to/configuration.rst
    how-to/io.rst
    how-to/behaviors.rst
+   how-to/mapfilter.rst
 
 .. toctree::
    :maxdepth: 1
@@ -47,6 +48,7 @@ Table of Contents
    api/collections.rst
    api/inspect.rst
    api/io.rst
+   api/mapfilter.rst
    api/reducers.rst
    api/structure.rst
    api/behavior.rst
