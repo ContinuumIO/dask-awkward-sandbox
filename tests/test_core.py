@@ -980,3 +980,14 @@ def test_array__bool_nonzero_long_int_float_complex_index():
             match=r"A dask_awkward.Array is encountered in a computation where a concrete value is expected. If you intend to convert the dask_awkward.Array to a concrete value, use the `.compute\(\)` method. The .+ method was called on .+.",
         ):
             fun(dask_arr)
+
+
+def test_map_partitions_deterministic_token():
+    dask_arr = dak.from_awkward(ak.Array([1]), npartitions=1)
+
+    def f(x):
+        return x[0] + 1
+
+    assert (
+        map_partitions(f, {0: dask_arr}).name == map_partitions(f, {0: dask_arr}).name
+    )

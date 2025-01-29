@@ -1965,7 +1965,18 @@ class ArgsKwargsPackedFunction:
         self.kwarg_repacker = kwarg_repacker
         self.arg_lens_for_repackers = arg_lens_for_repackers
 
-    def __call__(self, *args_deps_expanded):
+    def __repr__(self):
+        if hasattr(self.fn, "__qualname__"):
+            return f"{self.fn.__qualname__}-repacked"
+        return (
+            repr(self.fn)
+            .replace("<", "")
+            .replace(">", "")
+            .replace("function ", "")
+            .replace("built-in ", "")
+        ) + "-repacked"
+
+    def _repack(self, *args_deps_expanded):
         """This packing function receives a list of strictly
         ordered arguments. The first range of arguments,
         [0:sum(self.arg_lens_for_repackers)], corresponding to
@@ -1989,6 +2000,10 @@ class ArgsKwargsPackedFunction:
             )
             len_args += n_args
         kwargs = self.kwarg_repacker(args_deps_expanded[len_args:])[0]
+        return args, kwargs
+
+    def __call__(self, *args_deps_expanded):
+        args, kwargs = self._repack(*args_deps_expanded)
         return self.fn(*args, **kwargs)
 
 
@@ -2010,7 +2025,12 @@ def _map_partitions(
     will not be traversed to extract all dask collections, except those in
     the first dimension of args or kwargs.
     """
-    token = token or tokenize(fn, *args, output_divisions, **kwargs)
+    if isinstance(fn, ArgsKwargsPackedFunction):
+        token_args, token_kwargs = fn._repack(*args)
+        token = token or tokenize(fn.fn, *token_args, output_divisions, **token_kwargs)
+    else:
+        token = token or tokenize(fn, *args, output_divisions, **kwargs)
+
     label = hyphenize(label or funcname(fn))
     name = f"{label}-{token}"
     deps = [a for a in args if is_dask_collection(a)] + [
