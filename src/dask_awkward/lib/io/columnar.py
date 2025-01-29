@@ -44,6 +44,8 @@ class ImplementsColumnProjectionMixin(ImplementsNecessaryColumns, Protocol):
 
     def project_columns(self: T, columns: frozenset[str]) -> T: ...
 
+    def project_manually(self: T, columns: frozenset[str]) -> ImplementsIOFunction: ...
+
     def __call__(self, *args, **kwargs): ...
 
 
@@ -176,3 +178,6 @@ class ColumnProjectionMixin(ImplementsNecessaryColumns[FormStructure]):
             return self
 
         return self.project_columns(self.necessary_columns(report, state))
+
+    def project_manually(self: S, columns: frozenset[str]) -> ImplementsIOFunction:
+        return self.project_columns(columns)

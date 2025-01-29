@@ -1,0 +1,1 @@
+from dask_awkward.manual.column_optimization import optimize_columns

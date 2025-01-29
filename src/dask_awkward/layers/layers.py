@@ -82,6 +82,12 @@ class ImplementsProjection(ImplementsMocking, Protocol[T]):
 
     def project(self, report: TypeTracerReport, state: T) -> ImplementsIOFunction: ...
 
+    # `project_manually` is typically an alias to `project_columns`. Some IO functions
+    # might implement this method with a different name, because their respective file format
+    # uses different conventions. An example is ROOT, where the columns are called "keys".
+    # In this case, the method should be aliased to `project_keys`.
+    def project_manually(self, columns: frozenset[str]) -> ImplementsIOFunction: ...
+
 
 class ImplementsNecessaryColumns(ImplementsProjection[T], Protocol):
     def necessary_columns(
@@ -156,6 +162,7 @@ class AwkwardInputLayer(AwkwardBlockwiseLayer):
         produces_tasks: bool = False,
         creation_info: dict | None = None,
         annotations: Mapping[str, Any] | None = None,
+        is_projectable: bool | None = None,
     ) -> None:
         self.name = name
         self.inputs = inputs
@@ -164,6 +171,7 @@ class AwkwardInputLayer(AwkwardBlockwiseLayer):
         self.produces_tasks = produces_tasks
         self.annotations = annotations
         self.creation_info = creation_info
+        self._is_projectable = is_projectable
 
         io_arg_map = BlockwiseDepDict(
             mapping=LazyInputsDict(self.inputs),  # type: ignore
@@ -191,9 +199,16 @@ class AwkwardInputLayer(AwkwardBlockwiseLayer):
     @property
     def is_projectable(self) -> bool:
         # isinstance(self.io_func, ImplementsProjection)
-        return (
-            io_func_implements_projection(self.io_func) and not self.has_been_unpickled
-        )
+        if self._is_projectable is None:
+            return (
+                io_func_implements_projection(self.io_func)
+                and not self.has_been_unpickled
+            )
+        return self._is_projectable
+
+    @is_projectable.setter
+    def is_projectable(self, value: bool) -> None:
+        self._is_projectable = value
 
     @property
     def is_mockable(self) -> bool:
@@ -300,6 +315,20 @@ class AwkwardInputLayer(AwkwardBlockwiseLayer):
         assert self.is_columnar
         return cast(ImplementsNecessaryColumns, self.io_func).necessary_columns(
             report=report, state=state
+        )
+
+    def project_manually(self, columns: frozenset[str]) -> AwkwardInputLayer:
+        """Project the necessary _columns_ to the AwkwardInputLayer."""
+        assert self.is_projectable
+        io_func = cast(ImplementsProjection, self.io_func).project_manually(columns)
+        return AwkwardInputLayer(
+            name=self.name,
+            inputs=self.inputs,
+            io_func=io_func,
+            label=self.label,
+            produces_tasks=self.produces_tasks,
+            creation_info=self.creation_info,
+            annotations=self.annotations,
         )
 
 
