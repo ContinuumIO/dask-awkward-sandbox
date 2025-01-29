@@ -396,9 +396,20 @@ def rewrite_layer_chains(dsk: HighLevelGraph, keys: Sequence[Key]) -> HighLevelG
                     arg.key if isinstance(arg, GraphNode) else arg
                     for arg in layer.task.args
                 ]
+                kwargs = {
+                    k: v.key if isinstance(v, GraphNode) else v
+                    for k, v in layer.task.kwargs.items()
+                }
                 # how to do this with `.substitute(...)`?
                 args2 = _recursive_replace(args, layer, parent, indices)
-                all_tasks.append(Task(chain_member, func, *args2))
+                kwargs2 = {
+                    k: v
+                    for k, v in zip(
+                        kwargs.keys(),
+                        _recursive_replace(kwargs.values(), layer, parent, indices),
+                    )
+                }
+                all_tasks.append(Task(chain_member, func, *args2, **kwargs2))
             else:
                 func, *args = layer.dsk[chain_member]  # mypy: ignore
                 args2 = _recursive_replace(args, layer, parent, indices)
