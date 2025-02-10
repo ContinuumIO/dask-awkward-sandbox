@@ -9,7 +9,12 @@ import dask_awkward.lib.reducers as reducers
 import dask_awkward.lib.str as str
 import dask_awkward.lib.structure as structure
 import dask_awkward.lib.utils as utils
-from dask_awkward.lib.core import Array, PartitionCompatibility, Record, Scalar
+from dask_awkward.lib.core import (
+    Array,
+    PartitionCompatibility,
+    Record,
+    Scalar,
+)
 from dask_awkward.lib.core import _type as type
 from dask_awkward.lib.core import (
     compatible_partitions,
